@@ -481,6 +481,39 @@ def rhombohedralParametersFromHexagonal(a_h, c_h):
         alfa_r = r2d * alfa_r
     return a_r, alfa_r
 
+def millerBravaisToDirectionIndices(uvtw):
+    """
+    Convert direction indices in the 4-axis Miller-Bravais 
+    system to 3-axis direction indices
+    """
+    uvtw = num.atleast_2d(uvtw)
+    assert uvw.shape[0] == 4, 'row dimension of input array must be 4'
+    UVW = num.vstack([uvtw[0, :] - uvtw[2, :], uvtw[1, :] - uvtw[2, :], uvtw[3, :]])
+    return UVW
+
+def directionIndicesToMillerBravais(UVW):
+    """
+    Convert direction indices in the 3-axis system (lattice vectors)
+    to the 4-axis Miller-Bravais system
+    """
+    UVW = num.atleast_2d(UVW)
+    assert UVW.shape[0] == 3, 'row dimension of input array must be 4'
+    uvtw = num.vstack([(2 * UVW[0, :] - UVW[1, :]) / 3., 
+                       (2 * UVW[0, :] - UVW[1, :]) / 3., 
+                       -(UVW[0, :] - UVW[1, :]) / 3.,
+                       UVW[2, :]])
+    return uvtw
+
+def millerBravaisToUnit(u, v, w, a, c):
+    """
+    convert [u v (t) w] Miller-Bravais directions to a unit vector in the crystal basis.
+    the redundant index (t) is optional
+
+    a, c are the standard hexagonal lattice parameters
+    """
+    u = num.r_[u]; v = num.r_[v]; w = num.r_[w]
+    return unitVector(num.vstack([3*a*u/2., num.sqrt(3)*(2*v + u)*a/2., w*c]))
+
 class PlaneData(object):
     """
     Careful with ordering: Outputs are ordered by the 2-theta for the
