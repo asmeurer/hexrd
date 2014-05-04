@@ -28,6 +28,7 @@
 #
 # Module containing functions relevant to rotations
 #
+import sys, os, time
 import numpy
 from numpy import \
      arange, array, asarray, atleast_1d, ndarray, diag, empty, ones, zeros, \
@@ -812,8 +813,6 @@ def testRotMatOfExpMap(numpts):
     return
 #
 if __name__ == '__main__':
-    #
-    import sys, time
     #
     #  Simple tests.
     #
