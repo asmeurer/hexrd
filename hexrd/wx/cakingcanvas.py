@@ -420,7 +420,7 @@ class imgOpts(wx.Panel):
         self.sizer.Add(self.tbarSizer, 0, wx.EXPAND|wx.ALIGN_CENTER)
         self.sizer.Show(self.tbarSizer, False)
         self.sizer.Add(self.cmPanel,  0, wx.EXPAND|wx.ALIGN_CENTER)
-        self.sizer.Add(self.exp_but,  0, wx.ALIGN_LEFT|wx.TOP, 5)
+        self.sizer.Add(self.exp_but,  0, wx.ALIGN_RIGHT|wx.TOP, 5)
         return
     #
     # ============================== API
