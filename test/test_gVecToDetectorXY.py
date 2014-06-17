@@ -9,7 +9,7 @@ bVec_ref = xf.bVec_ref
 
 rMat_d = xf.makeDetectorRotMat( ( 0.0011546340766314521,
                                  -0.0040527538387122993,
-                                 -0.0026221336905160211 ) ) 
+                                 -0.0026221336905160211 ) )
 tVec_d = np.array( [ [   -1.44904 ],
                      [   -3.235616],
                      [-1050.74026 ] ] )
@@ -32,14 +32,14 @@ rMat_s = xf.makeOscillRotMat([chi, 0.])
 # Calculate pixel coordinates
 #
 #pvec  = 204.8 * np.linspace(-1, 1, 2048)
-pvec  = 204.8 * np.linspace(-1, 1, 512)
+pvec  = 204.8 * np.linspace(-1, 1, 64)
 dcrds = np.meshgrid(pvec, pvec)
 XY    = np.vstack([dcrds[0].flatten(), dcrds[1].flatten()]).T
 
 # Check the timings
 start1 = time.clock()                      # time this
 dangs1 = xf.detectorXYToGvec(XY, rMat_d, rMat_s,
-                             tVec_d, tVec_s, tVec_c, 
+                             tVec_d, tVec_s, tVec_c,
                              beamVec=bVec_ref)
 tTh_d1   = dangs1[0][0]
 eta_d1   = dangs1[0][1]
@@ -49,7 +49,7 @@ print "Time for Python detectorXYToGvec: %f"%(elapsed1)
 
 start2 = time.clock()                      # time this
 dangs2 = xfcapi.detectorXYToGvec(XY, rMat_d, rMat_s,
-                                 tVec_d, tVec_s, tVec_c, 
+                                 tVec_d, tVec_s, tVec_c,
                                  beamVec=bVec_ref)
 tTh_d2   = dangs2[0][0]
 eta_d2   = dangs2[0][1]

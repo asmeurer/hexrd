@@ -32,7 +32,8 @@ from hexrd.xrd import _transforms_CAPI
 
 from numpy import float_ as nFloat
 from numpy import int_ as nInt
-from numbapro import vectorize, jit, autojit, guvectorize, njit, typeof, cuda
+from numbapro import vectorize, jit, autojit, guvectorize, njit, typeof, \
+    cuda, float64
 # from numba import vectorize, jit, autojit, guvectorize, njit, typeof, cuda
 import math
 
@@ -226,80 +227,79 @@ def gvecToDetectorXY(gVec_c,
     # args = (gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat, dVec_l,
     #           nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d, result)
 
-    gvec_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat, dVec_l,
-              nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d, result)
+    # gvec_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat, dVec_l,
+    #           nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d, result)
     # print(map(typeof, args))
     # cpu_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat, dVec_l,
     #               nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d, result)
 
 
 
-    # gpu_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat, dVec_l,
-    #               nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d, result)
+    gpu_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat, dVec_l,
+                  nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d, result)
 
 
-
-@guvectorize(["float64[:], float64[:], float64[:], float64[:], float64[:], "
-              "float64, float64[:], float64[:], float64[:], float64, float64[:], "
-              "float64[:], float64[:], float64[:,:], float64[:,:], float64[:]"],
-             "(a,),(b,),(c,),(d,),(e,),"
-             "(), (f,), (g,), (h,), (), (i,),"
-             "(j,), (k,), (l, m), (n, o) -> (c,)")
-def gvec_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat,
-                   dVec_l,
-              nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d, result):
-
-
-    #nb_unitRowVector_cfunc(3, gVec_c[i], gHat_c)
-    nrm = 0.0
-    for j in range(3):
-        nrm += gVec_c[j] * gVec_c[j]
-    nrm = math.sqrt(nrm)
-    if nrm > epsf:
-        for j in range(3):
-            gHat_c[j] = gVec_c[j] / nrm
-    else:
-        for j in range(3):
-            gHat_c[j] = gVec_c[j]
-
-    bDot = 0.0
-    for j in range(3):
-        gVec_l[j] = 0.0
-        for k in range(3):
-            gVec_l[j] += rMat_sc[3 * j + k] * gHat_c[k]
-        bDot -= bHat_l[j] * gVec_l[j]
-
-    if bDot >= ztol and bDot <= 1.0 - ztol:
-        #If we are here diffraction is possible so increment the number of admissable vectors */
-        #nb_makeBinaryRotMat_cfunc(gVec_l, brMat);
-        for j in range(3):
-            for k in range(3):
-                brMat[3 *j + k] = 2.0 * gVec_l[j] * gVec_l[k]
-        brMat[3 * j + j] -= 1.0
-
-        denom = 0.0
-
-        for j in range(3):
-            dVec_l[j] = 0.0
-            for k in range(3):
-                dVec_l[j] -= brMat[3 * j + k] * bHat_l[k]
-            denom += nVec_l[j] * dVec_l[j]
-
-        if denom < -ztol:
-            u = num / denom;
-            for j in range(3):
-                P2_l[j] = P0_l[j] + u * dVec_l[j];
-            for j in range(2):
-                P2_d[j] = 0.0
-                for k in range(3):
-                    P2_d[j] += rMat_d[j, k] * (P2_l[k] - tVec_d[k, 0])
-                result[j] = P2_d[j];
-        else:
-            result[0] = not_a_num
-            result[1] = not_a_num
-    else:
-        result[0] = not_a_num
-        result[1] = not_a_num
+# @guvectorize(["float64[:], float64[:], float64[:], float64[:], float64[:], "
+#               "float64, float64[:], float64[:], float64[:], float64, float64[:], "
+#               "float64[:], float64[:], float64[:,:], float64[:,:], float64[:]"],
+#              "(a,),(b,),(c,),(d,),(e,),"
+#              "(), (f,), (g,), (h,), (), (i,),"
+#              "(j,), (k,), (l, m), (n, o) -> (c,)")
+# def gvec_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat,
+#                    dVec_l,
+#               nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d, result):
+#
+#
+#     #nb_unitRowVector_cfunc(3, gVec_c[i], gHat_c)
+#     nrm = 0.0
+#     for j in range(3):
+#         nrm += gVec_c[j] * gVec_c[j]
+#     nrm = math.sqrt(nrm)
+#     if nrm > epsf:
+#         for j in range(3):
+#             gHat_c[j] = gVec_c[j] / nrm
+#     else:
+#         for j in range(3):
+#             gHat_c[j] = gVec_c[j]
+#
+#     bDot = 0.0
+#     for j in range(3):
+#         gVec_l[j] = 0.0
+#         for k in range(3):
+#             gVec_l[j] += rMat_sc[3 * j + k] * gHat_c[k]
+#         bDot -= bHat_l[j] * gVec_l[j]
+#
+#     if bDot >= ztol and bDot <= 1.0 - ztol:
+#         #If we are here diffraction is possible so increment the number of admissable vectors */
+#         #nb_makeBinaryRotMat_cfunc(gVec_l, brMat);
+#         for j in range(3):
+#             for k in range(3):
+#                 brMat[3 *j + k] = 2.0 * gVec_l[j] * gVec_l[k]
+#         brMat[3 * j + j] -= 1.0
+#
+#         denom = 0.0
+#
+#         for j in range(3):
+#             dVec_l[j] = 0.0
+#             for k in range(3):
+#                 dVec_l[j] -= brMat[3 * j + k] * bHat_l[k]
+#             denom += nVec_l[j] * dVec_l[j]
+#
+#         if denom < -ztol:
+#             u = num / denom;
+#             for j in range(3):
+#                 P2_l[j] = P0_l[j] + u * dVec_l[j];
+#             for j in range(2):
+#                 P2_d[j] = 0.0
+#                 for k in range(3):
+#                     P2_d[j] += rMat_d[k, j] * (P2_l[k] - tVec_d[k, 0])
+#                 result[j] = P2_d[j];
+#         else:
+#             result[0] = not_a_num
+#             result[1] = not_a_num
+#     else:
+#         result[0] = not_a_num
+#         result[1] = not_a_num
 
 
 
@@ -313,49 +313,114 @@ def gpu_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat,
                   dVec_l, nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d,
                   result):
 
+    # gpu_core_loop_kernel.forall(result.shape[0])(gVec_c, rMat_sc, bHat_l, ztol, nVec_l, num, P0_l,
+    #                      rMat_d, tVec_d, result)
 
-    gpu_core_loop_kernel.forall(gVec_c.shape[0])(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat, dVec_l,
-                  nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d, result)
-    #
-    # dev_gVec_c = cuda.to_device(gVec_c)
-    # dev_gHat_c = cuda.to_device(gHat_c)
-    # dev_gVec_l = cuda.to_device(gVec_l)
-    # dev_rMat_sc = cuda.to_device(rMat_sc)
-    # dev_bHat_l = cuda.to_device(bHat_l)
-    # dev_brMat = cuda.to_device(brMat)
-    # dev_dVec_l = cuda.to_device(dVec_l)
-    # dev_nVec_l = cuda.to_device(nVec_l)
-    # dev_P2_l = cuda.to_device(P2_l)
-    # dev_P0_l = cuda.to_device(P0_l)
-    # dev_P2_d = cuda.to_device(P2_d)
-    # dev_rMat_d = cuda.to_device(rMat_d)
-    # dev_tVec_d = cuda.to_device(tVec_d)
-    # dev_result = cuda.to_device(result)
-    #
-    # gpu_core_loop_kernel.forall(gVec_c.shape[0])(dev_gVec_c, dev_gHat_c,
-    #                                          dev_gVec_l, dev_rMat_sc,
-    #                                          dev_bHat_l, ztol, dev_brMat,
-    #                                          dev_dVec_l, dev_nVec_l, num,
-    #                                          dev_P2_l, dev_P0_l, dev_P2_d,
-    #                                          dev_rMat_d, dev_tVec_d,
-    #                                          dev_result)
-    #
-    # dev_result.copy_to_host(ary=result)
+    # test_loop_kernel(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat,
+    #                  dVec_l, nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d,
+    #                  result)
+
+    dev_gVec_c = cuda.to_device(gVec_c)
+    dev_rMat_sc = cuda.to_device(rMat_sc)
+    dev_bHat_l = cuda.to_device(bHat_l)
+    dev_nVec_l = cuda.to_device(nVec_l)
+    dev_P0_l = cuda.to_device(P0_l)
+    dev_rMat_d = cuda.to_device(rMat_d)
+    dev_tVec_d = cuda.to_device(tVec_d)
+    dev_result = cuda.to_device(result)
+
+    gpu_core_loop_kernel.forall(result.shape[0])(dev_gVec_c, dev_rMat_sc, dev_bHat_l,
+                                                 ztol, dev_nVec_l, num, dev_P0_l,
+                                                 dev_rMat_d, dev_tVec_d, dev_result)
+
+    dev_result.copy_to_host(ary=result)
+
+def test_loop_kernel(gVec_c, rMat_sc, bHat_l, ztol, nVec_l, num, P0_l,
+                     rMat_d, tVec_d, result):
+
+    P2_d = np.zeros(3, dtype=np.float64)
+    P2_l = np.zeros(3, dtype=np.float64)
+    dVec_l = np.zeros(3, dtype=np.float64)
+    gVec_l = np.zeros(3, dtype=np.float64)
+    gHat_c = np.zeros(3, dtype=np.float64)
+    brMat = np.zeros(3 * 3, dtype=np.float64)
+
+    for i in range(gVec_c.shape[0]): # npts
+        #nb_unitRowVector_cfunc(3, gVec_c[i], gHat_c)
+        nrm = 0.0
+        for j in range(3):
+            nrm += gVec_c[i, j] * gVec_c[i, j]
+        nrm = math.sqrt(nrm)
+        if nrm > epsf:
+            for j in range(3):
+                gHat_c[j] = gVec_c[i, j] / nrm
+        else:
+            for j in range(3):
+                gHat_c[j] = gVec_c[i, j]
+
+        bDot = 0.0
+        for j in range(3):
+            gVec_l[j] = 0.0
+            for k in range(3):
+                gVec_l[j] += rMat_sc[3 * j + k] * gHat_c[k]
+            bDot -= bHat_l[j] * gVec_l[j]
+
+        if bDot >= ztol and bDot <= 1.0 - ztol:
+            #If we are here diffraction is possible so increment the number of admissable vectors */
+            #nb_makeBinaryRotMat_cfunc(gVec_l, brMat);
+            for j in range(3):
+                for k in range(3):
+                    brMat[3 *j + k] = 2.0 * gVec_l[j] * gVec_l[k]
+            j = 2
+            brMat[3 * j + j] -= 1.0
+
+            denom = 0.0
+
+            for j in range(3):
+                dVec_l[j] = 0.0
+                for k in range(3):
+                    dVec_l[j] -= brMat[3 * j + k] * bHat_l[k]
+                denom += nVec_l[j] * dVec_l[j]
+
+            if denom < -ztol:
+                u = num / denom
+                for j in range(3):
+                    P2_l[j] = P0_l[j] + u * dVec_l[j]
+                for j in range(2):
+                    P2_d[j] = 0.0
+                    for k in range(3):
+                        P2_d[j] += rMat_d[k, j] * (P2_l[k] - tVec_d[k, 0])
+                    result[i, j] = P2_d[j]
+            else:
+                result[i, 0] = not_a_num
+                result[i, 1] = not_a_num
+        else:
+            result[i, 0] = not_a_num
+            result[i, 1] = not_a_num
 
 
-@cuda.jit("float64[:,:], float64[:], float64[:], float64[:], float64[:], "
-          "float64, float64[:], float64[:], float64[:], float64, float64[:], "
-          "float64[:], float64[:], float64[:,:], float64[:,:], float64[:,:]",
-          debug=True)
-def gpu_core_loop_kernel(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat,
-                   dVec_l, nVec_l, num, P2_l, P0_l, P2_d, rMat_d, tVec_d,
-                   result):
+
+# ("float64[:,:], float64[:], float64[:], float64[:], float64[:], "
+#           "float64, float64[:], float64[:], float64[:], float64, float64[:], "
+#           "float64[:], float64[:], float64[:,:], float64[:,:], float64[:,:]",
+#           debug=True)
+
+@cuda.jit("float64[:,:], float64[:], float64[:], float64, float64[:], "
+          "float64, float64[:], float64[:,:], float64[:,:], float64[:,:]")
+def gpu_core_loop_kernel(gVec_c, rMat_sc, bHat_l, ztol, nVec_l, num, P0_l,
+                         rMat_d, tVec_d, result):
+
+    P2_d = cuda.local.array(3, dtype=float64)
+    P2_l = cuda.local.array(3, dtype=float64)
+    dVec_l = cuda.local.array(3, dtype=float64)
+    gVec_l = cuda.local.array(3, dtype=float64)
+    gHat_c = cuda.local.array(3, dtype=float64)
+    brMat = cuda.local.array(3 * 3, dtype=float64)
 
     i = cuda.grid(1)
-    if i >= gVec_c.shape[0]:
+    if i >= result.shape[0]:
         return
 
-    #nb_unitRowVector_cfunc(3, gVec_c[i], gHat_c)
     nrm = 0.0
     for j in range(3):
         nrm += gVec_c[i, j] * gVec_c[i, j]
@@ -380,6 +445,7 @@ def gpu_core_loop_kernel(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat,
         for j in range(3):
             for k in range(3):
                 brMat[3 *j + k] = 2.0 * gVec_l[j] * gVec_l[k]
+        j = 2
         brMat[3 * j + j] -= 1.0
 
         denom = 0.0
@@ -397,14 +463,16 @@ def gpu_core_loop_kernel(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat,
             for j in range(2):
                 P2_d[j] = 0.0
                 for k in range(3):
-                    P2_d[j] += rMat_d[j, k] * (P2_l[k] - tVec_d[k, 0])
-                result[i, j] = P2_d[j];
+                    P2_d[j] += rMat_d[k, j] * (P2_l[k] - tVec_d[k, 0])
+                result[i, j] = P2_d[j]
         else:
             result[i, 0] = not_a_num
             result[i, 1] = not_a_num
     else:
         result[i, 0] = not_a_num
         result[i, 1] = not_a_num
+
+
 
 @njit
 def cpu_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat, dVec_l,
@@ -436,6 +504,7 @@ def cpu_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat, dVec_l,
             for j in range(3):
                 for k in range(3):
                     brMat[3 *j + k] = 2.0 * gVec_l[j] * gVec_l[k]
+            j = 2
             brMat[3 * j + j] -= 1.0
 
             denom = 0.0
@@ -449,12 +518,12 @@ def cpu_core_loop(gVec_c, gHat_c, gVec_l, rMat_sc, bHat_l, ztol, brMat, dVec_l,
             if denom < -ztol:
                 u = num / denom;
                 for j in range(3):
-                    P2_l[j] = P0_l[j] + u * dVec_l[j];
+                    P2_l[j] = P0_l[j] + u * dVec_l[j]
                 for j in range(2):
                     P2_d[j] = 0.0
                     for k in range(3):
-                        P2_d[j] += rMat_d[j, k] * (P2_l[k] - tVec_d[k, 0])
-                    result[i, j] = P2_d[j];
+                        P2_d[j] += rMat_d[k, j] * (P2_l[k] - tVec_d[k, 0])
+                    result[i, j] = P2_d[j]
             else:
                 result[i, 0] = not_a_num
                 result[i, 1] = not_a_num

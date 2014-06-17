@@ -36,7 +36,7 @@ rMat_s = xf.makeOscillRotMat([chi, 0.])
 # Calculate pixel coordinates
 #
 #pvec  = 204.8 * np.linspace(-1, 1, 2048)
-pvec  = 204.8 * np.linspace(-1, 1, 256)
+pvec  = 204.8 * np.linspace(-1, 1, 512)
 dcrds = np.meshgrid(pvec, pvec)
 XY    = np.vstack([dcrds[0].flatten(), dcrds[1].flatten()]).T
 
@@ -99,11 +99,12 @@ brMat = np.zeros(9)
 result = np.empty((gVec_c2.shape[0], 3))
 bVec_ref= bVec_ref.flatten()
 
+
+# Warm up
+pycfuncs.gvecToDetectorXY(gVec_c2,rMat_d,rMat_s,rMat_c,tVec_d,tVec_s,tVec_c,bVec_ref, bHat_l, nVec_l, P0_l, P2_l, P2_d, P3_l, gHat_c, gVec_l, dVec_l, rMat_sc, brMat, result)
+
+# Actual benchmark of GPU
 start5 = timer()
-# print(tVec_s.shape)
-# tVec_s = tVec_s.flatten()
-# tVec_c = tVec_c.flatten()
-# tVec_d = tVec_d.flatten()
 pycfuncs.gvecToDetectorXY(gVec_c2,rMat_d,rMat_s,rMat_c,tVec_d,tVec_s,tVec_c,bVec_ref, bHat_l, nVec_l, P0_l, P2_l, P2_d, P3_l, gHat_c, gVec_l, dVec_l, rMat_sc, brMat, result)
 elapsed5 = (timer() - start5)
 print "Time for Numba PyCFuncs gvecToDetectorXY: %f"%(elapsed5)
