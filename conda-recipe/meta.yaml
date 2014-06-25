@@ -1,5 +1,6 @@
 package:
   name: hexrd
+  # Placeholder. The version is set from git describe in build.sh
   version: master
 
 source:
